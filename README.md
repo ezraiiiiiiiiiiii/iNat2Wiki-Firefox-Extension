@@ -1,0 +1,1 @@
+This extension adds a convenient iNat2Wiki button to iNaturalist observation pages which have photos under Wikimedia-compatible licenses. The button appears under the map and says "Open in iNat2Wiki". Enjoy!
