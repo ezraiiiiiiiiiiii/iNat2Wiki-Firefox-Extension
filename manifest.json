@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "iNat2Wiki Button",
-  "version": "1.0",
+  "version": "1.5",
   "description": "Add a button to iNaturalist observation pages to generate iNat2Wiki URL",
   
   "permissions": [
