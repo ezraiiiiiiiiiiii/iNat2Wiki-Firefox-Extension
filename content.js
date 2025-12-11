@@ -1,44 +1,69 @@
-// Content script for iNat2Wiki Button extension
 (function() {
     'use strict';
     
-    // Function to extract observation ID from URL
     function getObservationId() {
         const path = window.location.pathname;
         const match = path.match(/\/observations\/(\d+)/);
         return match ? match[1] : null;
     }
     
-    // Function to create and add the button
+    function hasCompatibleLicense() {
+        const attribution = document.querySelector('.ObservationAttribution');
+        if (!attribution) {
+            return null;
+        }
+        
+        const licenseLink = attribution.querySelector('a[href*="creativecommons.org"]');
+        if (!licenseLink) {
+            return false;
+        }
+        
+        const href = licenseLink.getAttribute('href');
+        
+        const compatibleLicenses = [
+            'https://creativecommons.org/publicdomain/cc0/',
+            'https://creativecommons.org/licenses/by/',
+            'https://creativecommons.org/licenses/by-sa/'
+        ];
+        
+        return compatibleLicenses.some(license => href.startsWith(license));
+    }
+    
     function addToolforgeButton() {
         const observationId = getObservationId();
         if (!observationId) return;
         
-        // Check if button already exists
-        if (document.getElementById('toolforge-button')) return;
+        if (document.getElementById('toolforge-button-container')) return;
         
-        // Create the button
+        const licenseCheck = hasCompatibleLicense();
+        if (licenseCheck === null) return;
+        if (!licenseCheck) return;
+        
+        const mapDiv = document.querySelector('.Map');
+        if (!mapDiv) return;
+        
+        const container = document.createElement('div');
+        container.id = 'toolforge-button-container';
+        container.style.cssText = `
+            margin: 10px 0;
+            padding: 0 15px;
+        `;
+        
         const button = document.createElement('button');
         button.id = 'toolforge-button';
-        button.innerHTML = '🔗 Open in iNat2Wiki';
+        button.innerHTML = '📸 Open in iNat2Wiki';
+        button.className = 'btn btn-default';
         button.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
+            width: 100%;
             background: #74ac00;
             color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+            border: 1px solid #5a8000;
+            padding: 8px 12px;
             font-size: 14px;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             transition: background 0.2s;
         `;
         
-        // Add hover effect
         button.addEventListener('mouseover', () => {
             button.style.background = '#5a8000';
         });
@@ -47,36 +72,46 @@
             button.style.background = '#74ac00';
         });
         
-        // Add click handler
         button.addEventListener('click', function() {
             const toolforgeUrl = `https://inat2wiki-dev.toolforge.org/parse/${observationId}`;
             window.open(toolforgeUrl, '_blank');
         });
         
-        // Add the button to the page
-        document.body.appendChild(button);
+        container.appendChild(button);
+        mapDiv.parentNode.insertBefore(container, mapDiv.nextSibling);
     }
     
-    // Wait for page to load and add button
+    function tryAddButton(attempts = 0) {
+        const maxAttempts = 20;
+        
+        if (attempts >= maxAttempts) return;
+        
+        const mapDiv = document.querySelector('.Map');
+        const attribution = document.querySelector('.ObservationAttribution');
+        
+        if (mapDiv && attribution) {
+            addToolforgeButton();
+        } else {
+            setTimeout(() => tryAddButton(attempts + 1), 300);
+        }
+    }
+    
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', addToolforgeButton);
+        document.addEventListener('DOMContentLoaded', () => tryAddButton());
     } else {
-        addToolforgeButton();
+        tryAddButton();
     }
     
-    // Watch for navigation changes (for single-page app behavior)
     let lastUrl = location.href;
     const observer = new MutationObserver(() => {
         const url = location.href;
         if (url !== lastUrl) {
             lastUrl = url;
-            // Remove existing button first
-            const existingButton = document.getElementById('toolforge-button');
-            if (existingButton) {
-                existingButton.remove();
+            const existingContainer = document.getElementById('toolforge-button-container');
+            if (existingContainer) {
+                existingContainer.remove();
             }
-            // Add button after a small delay for page to update
-            setTimeout(addToolforgeButton, 500);
+            setTimeout(() => tryAddButton(), 500);
         }
     });
     
