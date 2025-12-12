@@ -22,6 +22,7 @@
         
         const compatibleLicenses = [
             'https://creativecommons.org/publicdomain/cc0/',
+            'https://creativecommons.org/publicdomain/zero/',
             'https://creativecommons.org/licenses/by/',
             'https://creativecommons.org/licenses/by-sa/'
         ];
